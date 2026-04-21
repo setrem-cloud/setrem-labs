@@ -1,0 +1,106 @@
+# ========================================
+# Pipeline CI/CD Completo - Lab 3
+# Cloud Computing - SETREM
+#
+# Ciclo: test → build → push GHCR → atualizar manifest
+# ========================================
+
+name: Lab3 CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}  # setrem-cloud/<equipe>-labs
+  #FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ----- Job 1: Testes -----
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        working-directory: lab3/api
+        run: npm ci
+
+      - name: Executar testes
+        working-directory: lab3/api
+        run: npm test
+
+  # ----- Job 2: Build (e Push so no merge) -----
+  # Padrao de mercado: build valida o Dockerfile em PRs; push para o registry so no merge.
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4.2.2
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push da imagem
+        uses: docker/build-push-action@v6
+        with:
+          context: lab3
+          file: lab3/Dockerfile
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Verificar imagem publicada
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "Imagem publicada:"
+          echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+
+  # ----- Job 3: Atualizar manifest K8s com nova tag -----
+  # So roda no merge — o manifest aponta para a imagem recem publicada no GHCR.
+  update-manifests:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4.2.2
+
+      - name: Atualizar tag da imagem no deployment
+        run: |
+          # Substituir a tag da imagem no manifest K8s
+          sed -i "s|image: ghcr.io/.*:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|" lab3/k8s/deployment.yaml
+          echo "Manifest atualizado com tag: ${{ github.sha }}"
+          cat lab3/k8s/deployment.yaml
+
+      - name: Commit e push do manifest atualizado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lab3/k8s/deployment.yaml
+          # So commita se houve mudanca
+          git diff --staged --quiet || git commit -m "deploy: atualizar imagem para ${{ github.sha }}"
+          git push
