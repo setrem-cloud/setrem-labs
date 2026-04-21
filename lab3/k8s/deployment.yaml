@@ -22,7 +22,7 @@
       spec:
         containers:
         - name: api
-          image: ghcr.io/setrem-cloud/setrem-labs:latest
+          image: ghcr.io/setrem-cloud/setrem-labs:0b76e4450b67cbbf84203f72f6d1dd3bd0f9812d
           ports:
           - containerPort: 8080
           env:
