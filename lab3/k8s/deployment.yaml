@@ -25,9 +25,9 @@ spec:
       - name: api
         # Tag atualizada automaticamente pelo pipeline CI/CD
 #<<<<<<< HEAD
-        image: ghcr.io/setrem-cloud/setrem-labs:784ed2d457355ddb0e6c708849c3c6db87209e52
+        image: ghcr.io/setrem-cloud/setrem-labs:cb1f6dae7898b4ae5feed4e16053c1ed5cfdaa1c
 #=======
-#        image: ghcr.io/setrem-cloud/setrem-labs:784ed2d457355ddb0e6c708849c3c6db87209e52
+#        image: ghcr.io/setrem-cloud/setrem-labs:cb1f6dae7898b4ae5feed4e16053c1ed5cfdaa1c
 #>>>>>>> 60afdff (ci: lab3 - Ajustando Deployment)
         ports:
         - containerPort: 8080
@@ -92,7 +92,7 @@ spec:
       containers:
       - name: api
         # Tag atualizada automaticamente pelo pipeline CI/CD
-        image: ghcr.io/setrem-cloud/setrem-labs:784ed2d457355ddb0e6c708849c3c6db87209e52
+        image: ghcr.io/setrem-cloud/setrem-labs:cb1f6dae7898b4ae5feed4e16053c1ed5cfdaa1c
         ports:
         - containerPort: 8080
         env:
