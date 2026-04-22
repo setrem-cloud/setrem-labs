@@ -20,6 +20,8 @@ spec:
       labels:
         app: lab3-api
     spec:
+      imagePullSecrets:
+      - name: ghcr-secret
       containers:
       - name: api
         image: ghcr.io/setrem-cloud/setrem-labs:latest
