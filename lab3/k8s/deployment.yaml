@@ -24,7 +24,7 @@ spec:
         - name: ghcr-secret
       containers:
       - name: api
-        image: ghcr.io/setrem-cloud/setrem-labs:40d8af5f73712a76c060a230138df0ab36cd7e0f
+        image: ghcr.io/setrem-cloud/setrem-labs:bb1816a1b80da511abad3c536195536d19f55687
         ports:
         - containerPort: 8080
         env:
